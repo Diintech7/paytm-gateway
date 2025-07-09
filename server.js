@@ -1,9 +1,9 @@
 // server.js
 const express = require('express');
 const mongoose = require('mongoose');
-const corsMiddleware = require('./src/middleware/cors');
-const paytmRoutes = require('./src/routes/paytm');
-const PaytmConfig = require('./src/config/paytm');
+const corsMiddleware = require('./middleware/cors');
+const paytmRoutes = require('./routes/paytm');
+const PaytmConfig = require('./config/paytm');
 require('dotenv').config();
 
 const app = express();
