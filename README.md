@@ -2,7 +2,7 @@
 
 A common backend service for Paytm payment integration that can be used across multiple frontend projects.
 
-**Backend URL:** `https://airuter-backend.onrender.com`
+**Backend URL:** `https://paytm-gateway-n0py.onrender.com`
 
 ## Quick Start
 
@@ -34,7 +34,7 @@ A common backend service for Paytm payment integration that can be used across m
     "ORDER_ID": "ORDER_1234567890_abc123",
     "CUST_ID": "customer@example.com",
     "TXN_AMOUNT": "100.00",
-    "CALLBACK_URL": "https://airuter-backend.onrender.com/api/paytm/callback",
+    "CALLBACK_URL": "https://paytm-gateway-n0py.onrender.com/api/paytm/callback",
     "EMAIL": "customer@example.com",
     "MOBILE_NO": "9876543210",
     "CHECKSUMHASH": "generated_checksum_hash"
@@ -58,7 +58,7 @@ A common backend service for Paytm payment integration that can be used across m
     <script>
         async function initiatePayment() {
             try {
-                const response = await fetch('https://airuter-backend.onrender.com/api/paytm/initiate', {
+                const response = await fetch('https://paytm-gateway-n0py.onrender.com/api/paytm/initiate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ const PaymentComponent = () => {
     const initiatePayment = async () => {
         setLoading(true);
         try {
-            const response = await fetch('https://airuter-backend.onrender.com/api/paytm/initiate', {
+            const response = await fetch('https://paytm-gateway-n0py.onrender.com/api/paytm/initiate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -205,7 +205,7 @@ const status = urlParams.get('status');
 
 if (orderId) {
     // Check payment status
-    fetch(`https://airuter-backend.onrender.com/api/paytm/status/${orderId}`)
+    fetch(`https://paytm-gateway-n0py.onrender.com/api/paytm/status/${orderId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -295,7 +295,7 @@ Store the backend URL in your frontend environment variables:
 
 ```javascript
 // .env
-REACT_APP_PAYMENT_API_URL=https://airuter-backend.onrender.com
+REACT_APP_PAYMENT_API_URL=https://paytm-gateway-n0py.onrender.com
 
 // Usage
 const API_URL = process.env.REACT_APP_PAYMENT_API_URL;
