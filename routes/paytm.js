@@ -2,7 +2,7 @@
 const express = require('express');
 const axios = require('axios');
 const PaytmChecksum = require('paytmchecksum');
-const Payment = require('../../models/Payment');
+const Payment = require('../models/Payment');
 const PaytmConfig = require('../config/paytm');
 const { sendSuccessResponse, sendErrorResponse, sendValidationError } = require('../utils/response');
 
@@ -238,4 +238,4 @@ router.post('/transaction-status', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = router;        

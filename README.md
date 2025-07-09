@@ -1,38 +1,14 @@
-# Paytm Payment Gateway API
+# Paytm Payment Gateway Backend API
 
-A robust Node.js backend service for integrating Paytm payment gateway with any frontend application.
+A common backend service for Paytm payment integration that can be used across multiple frontend projects.
 
-## 🚀 Live API Base URL
-```
-https://airuter-backend.onrender.com
-```
+**Backend URL:** `https://airuter-backend.onrender.com`
 
-## 📋 API Endpoints
+## Quick Start
 
-### 1. Health Check
-**GET** `/api/health`
+### 1. Initiate Payment
 
-Check if the server is running.
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Paytm Payment Gateway Server is running",
-  "timestamp": "2024-01-15T10:30:00.000Z",
-  "config": {
-    "MID": "Mobish80382601607975",
-    "WEBSITE": "DEFAULT",
-    "ENVIRONMENT": "production",
-    "PAYTM_URL": "https://securegw-stage.paytm.in/theia/processTransaction"
-  }
-}
-```
-
-### 2. Initiate Payment
-**POST** `/api/paytm/initiate`
-
-Initialize a payment transaction.
+**Endpoint:** `POST /api/paytm/initiate`
 
 **Request Body:**
 ```json
@@ -40,7 +16,8 @@ Initialize a payment transaction.
   "amount": 100.00,
   "customerEmail": "customer@example.com",
   "customerPhone": "9876543210",
-  "customerName": "John Doe"
+  "customerName": "John Doe",
+  "projectId": "your-project-id" // Optional: helps track payments by project
 }
 ```
 
@@ -48,541 +25,77 @@ Initialize a payment transaction.
 ```json
 {
   "success": true,
-  "message": "Payment initiated successfully",
-  "data": {
-    "orderId": "ORDER_1642234567890_abc123def",
-    "paytmParams": {
-      "MID": "Mobish80382601607975",
-      "WEBSITE": "DEFAULT",
-      "CHANNEL_ID": "WEB",
-      "INDUSTRY_TYPE_ID": "Retail109",
-      "ORDER_ID": "ORDER_1642234567890_abc123def",
-      "CUST_ID": "customer@example.com",
-      "TXN_AMOUNT": "100.00",
-      "CALLBACK_URL": "https://airuter-backend.onrender.com/api/paytm/callback",
-      "EMAIL": "customer@example.com",
-      "MOBILE_NO": "9876543210",
-      "CHECKSUMHASH": "generated_checksum_hash"
-    },
-    "paytmUrl": "https://securegw-stage.paytm.in/theia/processTransaction"
+  "orderId": "ORDER_1234567890_abc123",
+  "paytmParams": {
+    "MID": "Mobish80382601607975",
+    "WEBSITE": "WEBSTAGING",
+    "CHANNEL_ID": "WEB",
+    "INDUSTRY_TYPE_ID": "Retail109",
+    "ORDER_ID": "ORDER_1234567890_abc123",
+    "CUST_ID": "customer@example.com",
+    "TXN_AMOUNT": "100.00",
+    "CALLBACK_URL": "https://airuter-backend.onrender.com/api/paytm/callback",
+    "EMAIL": "customer@example.com",
+    "MOBILE_NO": "9876543210",
+    "CHECKSUMHASH": "generated_checksum_hash"
   },
-  "timestamp": "2024-01-15T10:30:00.000Z"
+  "paytmUrl": "https://securegw-stage.paytm.in/order/process"
 }
 ```
 
-### 3. Check Payment Status
-**GET** `/api/paytm/status/:orderId`
+### 2. Frontend Implementation
 
-Check the status of a payment transaction.
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Payment status retrieved successfully",
-  "data": {
-    "orderId": "ORDER_1642234567890_abc123def",
-    "amount": 100,
-    "status": "SUCCESS",
-    "transactionId": "TXN123456789",
-    "customerEmail": "customer@example.com",
-    "customerName": "John Doe",
-    "paymentMode": "CARD",
-    "bankName": "HDFC Bank",
-    "responseCode": "01",
-    "responseMsg": "Txn Success",
-    "createdAt": "2024-01-15T10:30:00.000Z",
-    "updatedAt": "2024-01-15T10:35:00.000Z"
-  },
-  "timestamp": "2024-01-15T10:36:00.000Z"
-}
-```
-
-### 4. Get All Payments (Admin)
-**GET** `/api/paytm/payments`
-
-Get paginated list of all payments.
-
-**Query Parameters:**
-- `page` (optional): Page number (default: 1)
-- `limit` (optional): Records per page (default: 10)
-- `status` (optional): Filter by status (PENDING, SUCCESS, FAILED, CANCELLED)
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Payments retrieved successfully",
-  "data": {
-    "payments": [
-      {
-        "orderId": "ORDER_1642234567890_abc123def",
-        "amount": 100,
-        "status": "SUCCESS",
-        "customerEmail": "customer@example.com",
-        "customerName": "John Doe",
-        "createdAt": "2024-01-15T10:30:00.000Z"
-      }
-    ],
-    "pagination": {
-      "currentPage": 1,
-      "totalPages": 5,
-      "totalRecords": 50,
-      "limit": 10
-    }
-  },
-  "timestamp": "2024-01-15T10:36:00.000Z"
-}
-```
-
-### 5. Transaction Status Inquiry
-**POST** `/api/paytm/transaction-status`
-
-Query Paytm directly for transaction status.
-
-**Request Body:**
-```json
-{
-  "orderId": "ORDER_1642234567890_abc123def"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Transaction status retrieved successfully",
-  "data": {
-    "STATUS": "TXN_SUCCESS",
-    "ORDERID": "ORDER_1642234567890_abc123def",
-    "TXNID": "TXN123456789",
-    "TXNAMOUNT": "100.00",
-    "CURRENCY": "INR",
-    "RESPCODE": "01",
-    "RESPMSG": "Txn Success"
-  },
-  "timestamp": "2024-01-15T10:36:00.000Z"
-}
-```
-
-## 🔧 Frontend Integration Examples
-
-### JavaScript/React Example
-
-```javascript
-// Initialize Payment
-const initiatePayment = async (paymentData) => {
-  try {
-    const response = await fetch('https://airuter-backend.onrender.com/api/paytm/initiate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(paymentData)
-    });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-      // Create form and redirect to Paytm
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = result.data.paytmUrl;
-      
-      // Add all paytm parameters as hidden inputs
-      Object.keys(result.data.paytmParams).forEach(key => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = result.data.paytmParams[key];
-        form.appendChild(input);
-      });
-      
-      document.body.appendChild(form);
-      form.submit();
-    }
-  } catch (error) {
-    console.error('Payment initiation failed:', error);
-  }
-};
-
-// Check Payment Status
-const checkPaymentStatus = async (orderId) => {
-  try {
-    const response = await fetch(`https://airuter-backend.onrender.com/api/paytm/status/${orderId}`);
-    const result = await response.json();
-    
-    if (result.success) {
-      console.log('Payment Status:', result.data.status);
-      return result.data;
-    }
-  } catch (error) {
-    console.error('Status check failed:', error);
-  }
-};
-
-// Usage
-const paymentData = {
-  amount: 100.00,
-  customerEmail: 'customer@example.com',
-  customerPhone: '9876543210',
-  customerName: 'John Doe'
-};
-
-initiatePayment(paymentData);
-```
-
-### React Hook Example
-
-```javascript
-import { useState, useEffect } from 'react';
-
-const usePayment = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const initiatePayment = async (paymentData) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch('https://airuter-backend.onrender.com/api/paytm/initiate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(paymentData)
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        // Redirect to Paytm
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = result.data.paytmUrl;
-        
-        Object.keys(result.data.paytmParams).forEach(key => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = key;
-          input.value = result.data.paytmParams[key];
-          form.appendChild(input);
-        });
-        
-        document.body.appendChild(form);
-        form.submit();
-      } else {
-        setError(result.message);
-      }
-    } catch (err) {
-      setError('Payment initiation failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkStatus = async (orderId) => {
-    try {
-      const response = await fetch(`https://airuter-backend.onrender.com/api/paytm/status/${orderId}`);
-      const result = await response.json();
-      return result.success ? result.data : null;
-    } catch (err) {
-      console.error('Status check failed:', err);
-      return null;
-    }
-  };
-
-  return { initiatePayment, checkStatus, loading, error };
-};
-
-export default usePayment;
-```
-
-### Vue.js Example
-
-```javascript
-// In your Vue component
-export default {
-  data() {
-    return {
-      loading: false,
-      error: null
-    }
-  },
-  methods: {
-    async initiatePayment(paymentData) {
-      this.loading = true;
-      this.error = null;
-      
-      try {
-        const response = await fetch('https://airuter-backend.onrender.com/api/paytm/initiate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(paymentData)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          // Create form and redirect
-          const form = document.createElement('form');
-          form.method = 'POST';
-          form.action = result.data.paytmUrl;
-          
-          Object.keys(result.data.paytmParams).forEach(key => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = result.data.paytmParams[key];
-            form.appendChild(input);
-          });
-          
-          document.body.appendChild(form);
-          form.submit();
-        } else {
-          this.error = result.message;
-        }
-      } catch (err) {
-        this.error = 'Payment initiation failed';
-      } finally {
-        this.loading = false;
-      }
-    },
-    
-    async checkPaymentStatus(orderId) {
-      try {
-        const response = await fetch(`https://airuter-backend.onrender.com/api/paytm/status/${orderId}`);
-        const result = await response.json();
-        return result.success ? result.data : null;
-      } catch (err) {
-        console.error('Status check failed:', err);
-        return null;
-      }
-    }
-  }
-}
-```
-
-## 🎯 Payment Flow
-
-1. **Initialize Payment**: Call `/api/paytm/initiate` with customer details
-2. **Redirect to Paytm**: Use returned `paytmParams` and `paytmUrl` to redirect user
-3. **Payment Processing**: User completes payment on Paytm
-4. **Callback Handling**: Paytm redirects back to the callback URL (handled by backend)
-5. **Status Check**: Use `/api/paytm/status/:orderId` to check payment status
-6. **Transaction Inquiry**: Use `/api/paytm/transaction-status` for direct Paytm inquiry
-
-## 📝 Important Notes
-
-### Payment Status Values
-- `PENDING`: Payment initiated but not completed
-- `SUCCESS`: Payment completed successfully
-- `FAILED`: Payment failed
-- `CANCELLED`: Payment cancelled by user
-
-### Error Handling
-All API responses follow a consistent format:
-
-**Success Response:**
-```json
-{
-  "success": true,
-  "message": "Operation successful",
-  "data": { ... },
-  "timestamp": "2024-01-15T10:30:00.000Z"
-}
-```
-
-**Error Response:**
-```json
-{
-  "success": false,
-  "message": "Error description",
-  "error": "Detailed error message",
-  "timestamp": "2024-01-15T10:30:00.000Z"
-}
-```
-
-### CORS Configuration
-The API is configured to accept requests from any origin, making it suitable for multiple frontend applications.
-
-## 🔐 Security Considerations
-
-1. **Checksum Validation**: All transactions are validated using Paytm's checksum mechanism
-2. **Database Storage**: All payment records are stored securely in MongoDB
-3. **Environment Variables**: Sensitive configuration is handled via environment variables
-4. **Input Validation**: All API endpoints validate required fields
-
-## 🛠️ Testing
-
-### Test Payment Data
-For testing in staging environment, you can use:
-- **Amount**: Any amount (e.g., 1.00, 100.00)
-- **Email**: Any valid email format
-- **Phone**: Any 10-digit number
-- **Name**: Any name
-
-### Test Flow
-1. Call the initiate endpoint with test data
-2. You'll be redirected to Paytm's staging environment
-3. Use Paytm's test credentials to complete payment
-4. Check the payment status using the status endpoint
-
-## 📱 Mobile App Integration
-
-### React Native Example
-```javascript
-import { Linking } from 'react-native';
-
-const initiatePayment = async (paymentData) => {
-  try {
-    const response = await fetch('https://airuter-backend.onrender.com/api/paytm/initiate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(paymentData)
-    });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-      // Create form data for POST request
-      const formData = new FormData();
-      Object.keys(result.data.paytmParams).forEach(key => {
-        formData.append(key, result.data.paytmParams[key]);
-      });
-      
-      // For React Native, you might need to use WebView or deep linking
-      const paymentUrl = `${result.data.paytmUrl}?${new URLSearchParams(result.data.paytmParams).toString()}`;
-      
-      // Open in WebView or external browser
-      Linking.openURL(paymentUrl);
-    }
-  } catch (error) {
-    console.error('Payment failed:', error);
-  }
-};
-```
-
-### Flutter Example
-```dart
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
-Future<void> initiatePayment(Map<String, dynamic> paymentData) async {
-  try {
-    final response = await http.post(
-      Uri.parse('https://airuter-backend.onrender.com/api/paytm/initiate'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(paymentData),
-    );
-    
-    if (response.statusCode == 200) {
-      final result = jsonDecode(response.body);
-      if (result['success']) {
-        // Handle Paytm redirection
-        final paytmUrl = result['data']['paytmUrl'];
-        final paytmParams = result['data']['paytmParams'];
-        
-        // Use webview_flutter or url_launcher to handle payment
-      }
-    }
-  } catch (error) {
-    print('Payment initiation failed: $error');
-  }
-}
-```
-
-## 🔄 Webhook Alternative
-If you need real-time payment updates in your frontend application, consider implementing a webhook system or WebSocket connection to receive payment status updates immediately after the callback is processed.
-
-## 🚀 Quick Start Examples
-
-### HTML/JavaScript (Vanilla)
+#### HTML/JavaScript Example:
 ```html
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Paytm Payment Integration</title>
+    <title>Payment Integration</title>
 </head>
 <body>
-    <button onclick="startPayment()">Pay ₹100</button>
-    <div id="status"></div>
-
+    <button onclick="initiatePayment()">Pay Now</button>
+    
     <script>
-        async function startPayment() {
-            const paymentData = {
-                amount: 100.00,
-                customerEmail: 'test@example.com',
-                customerPhone: '9876543210',
-                customerName: 'Test User'
-            };
-            
+        async function initiatePayment() {
             try {
                 const response = await fetch('https://airuter-backend.onrender.com/api/paytm/initiate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(paymentData)
+                    body: JSON.stringify({
+                        amount: 100.00,
+                        customerEmail: 'customer@example.com',
+                        customerPhone: '9876543210',
+                        customerName: 'John Doe',
+                        projectId: 'my-ecommerce-app'
+                    })
                 });
                 
-                const result = await response.json();
+                const data = await response.json();
                 
-                if (result.success) {
+                if (data.success) {
+                    // Create form and submit to Paytm
                     const form = document.createElement('form');
                     form.method = 'POST';
-                    form.action = result.data.paytmUrl;
+                    form.action = data.paytmUrl;
                     
-                    Object.keys(result.data.paytmParams).forEach(key => {
+                    Object.keys(data.paytmParams).forEach(key => {
                         const input = document.createElement('input');
                         input.type = 'hidden';
                         input.name = key;
-                        input.value = result.data.paytmParams[key];
+                        input.value = data.paytmParams[key];
                         form.appendChild(input);
                     });
                     
                     document.body.appendChild(form);
                     form.submit();
                 } else {
-                    document.getElementById('status').innerHTML = 'Payment failed: ' + result.message;
+                    alert('Payment initiation failed: ' + data.message);
                 }
             } catch (error) {
-                document.getElementById('status').innerHTML = 'Error: ' + error.message;
-            }
-        }
-        
-        // Check payment status on page load (if returning from Paytm)
-        window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const orderId = urlParams.get('orderId');
-            
-            if (orderId) {
-                checkPaymentStatus(orderId);
-            }
-        };
-        
-        async function checkPaymentStatus(orderId) {
-            try {
-                const response = await fetch(`https://airuter-backend.onrender.com/api/paytm/status/${orderId}`);
-                const result = await response.json();
-                
-                if (result.success) {
-                    const status = result.data.status;
-                    document.getElementById('status').innerHTML = `Payment Status: ${status}`;
-                    
-                    if (status === 'SUCCESS') {
-                        document.getElementById('status').style.color = 'green';
-                    } else if (status === 'FAILED') {
-                        document.getElementById('status').style.color = 'red';
-                    }
-                }
-            } catch (error) {
-                console.error('Status check failed:', error);
+                console.error('Error:', error);
+                alert('Payment initiation failed');
             }
         }
     </script>
@@ -590,124 +103,327 @@ If you need real-time payment updates in your frontend application, consider imp
 </html>
 ```
 
-### Node.js Backend Integration
-```javascript
-const express = require('express');
-const axios = require('axios');
+#### React Example:
+```jsx
+import React, { useState } from 'react';
 
-const app = express();
-app.use(express.json());
-
-// Your backend route to handle payment initiation
-app.post('/initiate-payment', async (req, res) => {
-    try {
-        const { amount, userEmail, userPhone, userName } = req.body;
-        
-        const paymentData = {
-            amount: amount,
-            customerEmail: userEmail,
-            customerPhone: userPhone,
-            customerName: userName
-        };
-        
-        const response = await axios.post('https://airuter-backend.onrender.com/api/paytm/initiate', paymentData);
-        
-        if (response.data.success) {
-            res.json({
-                success: true,
-                orderId: response.data.data.orderId,
-                paytmParams: response.data.data.paytmParams,
-                paytmUrl: response.data.data.paytmUrl
-            });
-        } else {
-            res.status(400).json({ success: false, message: response.data.message });
-        }
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Payment initiation failed' });
-    }
-});
-
-// Check payment status
-app.get('/payment-status/:orderId', async (req, res) => {
-    try {
-        const response = await axios.get(`https://airuter-backend.onrender.com/api/paytm/status/${req.params.orderId}`);
-        res.json(response.data);
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Status check failed' });
-    }
-});
-```
-
-## 🎨 Frontend Implementation Tips
-
-### 1. Loading States
-Always show loading indicators during payment initiation:
-```javascript
-const [loading, setLoading] = useState(false);
-
-const handlePayment = async () => {
-    setLoading(true);
-    try {
-        // Payment initiation code
-    } finally {
-        setLoading(false);
-    }
-};
-```
-
-### 2. Error Handling
-Implement proper error handling:
-```javascript
-const [error, setError] = useState('');
-
-// In your payment function
-if (!result.success) {
-    setError(result.message);
-    return;
-}
-```
-
-### 3. Payment Status Polling
-For real-time status updates:
-```javascript
-const pollPaymentStatus = async (orderId) => {
-    const maxAttempts = 30;
-    let attempts = 0;
+const PaymentComponent = () => {
+    const [loading, setLoading] = useState(false);
     
-    const checkStatus = async () => {
+    const initiatePayment = async () => {
+        setLoading(true);
         try {
-            const response = await fetch(`https://airuter-backend.onrender.com/api/paytm/status/${orderId}`);
-            const result = await response.json();
+            const response = await fetch('https://airuter-backend.onrender.com/api/paytm/initiate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    amount: 100.00,
+                    customerEmail: 'customer@example.com',
+                    customerPhone: '9876543210',
+                    customerName: 'John Doe',
+                    projectId: 'my-react-app'
+                })
+            });
             
-            if (result.success && result.data.status !== 'PENDING') {
-                return result.data;
-            }
+            const data = await response.json();
             
-            if (attempts < maxAttempts) {
-                attempts++;
-                setTimeout(checkStatus, 2000); // Check every 2 seconds
+            if (data.success) {
+                // Create form and submit to Paytm
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = data.paytmUrl;
+                
+                Object.keys(data.paytmParams).forEach(key => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = data.paytmParams[key];
+                    form.appendChild(input);
+                });
+                
+                document.body.appendChild(form);
+                form.submit();
+            } else {
+                alert('Payment initiation failed: ' + data.message);
             }
         } catch (error) {
-            console.error('Status polling failed:', error);
+            console.error('Error:', error);
+            alert('Payment initiation failed');
+        } finally {
+            setLoading(false);
         }
     };
     
-    checkStatus();
+    return (
+        <button onClick={initiatePayment} disabled={loading}>
+            {loading ? 'Processing...' : 'Pay Now'}
+        </button>
+    );
+};
+
+export default PaymentComponent;
+```
+
+### 3. Check Payment Status
+
+**Endpoint:** `GET /api/paytm/status/:orderId`
+
+**Response:**
+```json
+{
+  "success": true,
+  "payment": {
+    "orderId": "ORDER_1234567890_abc123",
+    "amount": 100.00,
+    "status": "SUCCESS", // SUCCESS, PENDING, FAILED, CANCELLED
+    "transactionId": "TXN_1234567890",
+    "customerEmail": "customer@example.com",
+    "customerName": "John Doe",
+    "customerPhone": "9876543210",
+    "projectId": "my-project-id",
+    "paymentMode": "CREDIT_CARD",
+    "bankName": "HDFC Bank",
+    "responseCode": "01",
+    "responseMsg": "Txn Success",
+    "createdAt": "2024-01-01T10:00:00.000Z",
+    "updatedAt": "2024-01-01T10:05:00.000Z"
+  }
+}
+```
+
+### 4. Handle Payment Callback
+
+After payment completion, Paytm will send a callback to our backend. You can check the payment status using the order ID or handle it in your frontend:
+
+```javascript
+// Get order ID from URL parameters after payment
+const urlParams = new URLSearchParams(window.location.search);
+const orderId = urlParams.get('orderId');
+const status = urlParams.get('status');
+
+if (orderId) {
+    // Check payment status
+    fetch(`https://airuter-backend.onrender.com/api/paytm/status/${orderId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const payment = data.payment;
+                if (payment.status === 'SUCCESS') {
+                    // Payment successful
+                    showSuccessMessage(payment);
+                } else if (payment.status === 'FAILED') {
+                    // Payment failed
+                    showFailureMessage(payment);
+                } else {
+                    // Payment pending
+                    showPendingMessage(payment);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error checking payment status:', error);
+        });
+}
+```
+
+## API Endpoints
+
+### Core Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/paytm/initiate` | Initiate a new payment |
+| GET | `/api/paytm/status/:orderId` | Check payment status |
+| POST | `/api/paytm/callback` | Payment callback (handled by Paytm) |
+| POST | `/api/paytm/transaction-status` | Check transaction status with Paytm |
+
+### Management Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/paytm/payments` | Get all payments (with filtering) |
+| GET | `/api/paytm/summary/:projectId` | Get payment summary by project |
+| GET | `/api/health` | Health check endpoint |
+
+### Query Parameters for `/api/paytm/payments`
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `page` | Number | Page number (default: 1) |
+| `limit` | Number | Records per page (default: 10) |
+| `status` | String | Filter by status (SUCCESS, PENDING, FAILED, CANCELLED) |
+| `projectId` | String | Filter by project ID |
+
+**Example:**
+```
+GET /api/paytm/payments?page=1&limit=20&status=SUCCESS&projectId=my-app
+```
+
+## Payment Status Values
+
+| Status | Description |
+|--------|-------------|
+| `PENDING` | Payment is being processed |
+| `SUCCESS` | Payment completed successfully |
+| `FAILED` | Payment failed |
+| `CANCELLED` | Payment was cancelled by user |
+
+## Error Handling
+
+All endpoints return standardized error responses:
+
+```json
+{
+  "success": false,
+  "message": "Error description",
+  "error": "Detailed error message"
+}
+```
+
+Common HTTP status codes:
+- `200` - Success
+- `400` - Bad Request (missing required fields)
+- `404` - Not Found (payment not found)
+- `500` - Internal Server Error
+
+## Frontend Integration Tips
+
+### 1. Environment Variables
+Store the backend URL in your frontend environment variables:
+
+```javascript
+// .env
+REACT_APP_PAYMENT_API_URL=https://airuter-backend.onrender.com
+
+// Usage
+const API_URL = process.env.REACT_APP_PAYMENT_API_URL;
+```
+
+### 2. Error Handling
+Always handle errors gracefully:
+
+```javascript
+try {
+    const response = await fetch(`${API_URL}/api/paytm/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentData)
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+        throw new Error(data.message || 'Payment initiation failed');
+    }
+    
+    // Handle success
+} catch (error) {
+    console.error('Payment error:', error);
+    // Show user-friendly error message
+}
+```
+
+### 3. Loading States
+Show loading indicators during payment processing:
+
+```javascript
+const [isProcessing, setIsProcessing] = useState(false);
+
+const handlePayment = async () => {
+    setIsProcessing(true);
+    try {
+        // Payment initiation code
+    } finally {
+        setIsProcessing(false);
+    }
 };
 ```
 
-## 🔧 API Rate Limits
-- No specific rate limits are enforced
-- However, avoid making excessive requests to prevent server overload
-- Implement proper retry logic with exponential backoff
+### 4. Payment Verification
+After payment completion, always verify the payment status:
 
-## 📞 Support
-For technical issues or questions about the API integration:
-- Review the error responses for detailed error messages
-- Check the console logs for debugging information
-- Ensure all required fields are provided in requests
+```javascript
+const verifyPayment = async (orderId) => {
+    try {
+        const response = await fetch(`${API_URL}/api/paytm/status/${orderId}`);
+        const data = await response.json();
+        
+        if (data.success && data.payment.status === 'SUCCESS') {
+            // Payment verified successfully
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Payment verification failed:', error);
+        return false;
+    }
+};
+```
 
-## 🔄 Version History
-- **v1.0.0**: Initial release with basic payment functionality
-- Supports all major payment methods available through Paytm
-- Compatible with staging and production environments
+## Testing
+
+### Test Credentials
+The backend is configured with Paytm staging credentials for testing:
+- Use any valid email and phone number
+- Use test card numbers provided by Paytm
+- Test transactions won't charge real money
+
+### Test Payment Flow
+1. Call `/api/paytm/initiate` with test data
+2. Use the returned `paytmParams` to submit to Paytm
+3. Complete payment on Paytm's test page
+4. Check payment status using `/api/paytm/status/:orderId`
+
+## Project ID Usage
+
+Include a `projectId` in your payment requests to:
+- Track payments by different frontend applications
+- Generate project-specific reports
+- Separate payment data for different services
+
+```javascript
+// Example for different projects
+const paymentData = {
+    amount: 100.00,
+    customerEmail: 'user@example.com',
+    customerPhone: '9876543210',
+    customerName: 'John Doe',
+    projectId: 'ecommerce-app' // or 'booking-app', 'subscription-service', etc.
+};
+```
+
+## Security Considerations
+
+1. **Never expose sensitive data**: Don't store or log sensitive payment information in your frontend
+2. **Use HTTPS**: Always use HTTPS in production
+3. **Validate on backend**: All payment validation happens on the backend
+4. **Check payment status**: Always verify payment status after completion
+
+## CORS Configuration
+
+The backend supports multiple origins. Common frontend URLs are already configured. If you need to add your domain, contact the backend administrator.
+
+## Support
+
+For integration issues or questions:
+1. Check the payment status using the status endpoint
+2. Review the browser console for error messages
+3. Ensure all required fields are included in requests
+4. Verify the backend URL is correct
+
+## Example Integration Workflow
+
+1. **User clicks "Pay Now"**
+2. **Frontend calls** `/api/paytm/initiate`
+3. **Backend responds** with Paytm parameters
+4. **Frontend submits** form to Paytm
+5. **User completes** payment on Paytm
+6. **Paytm sends callback** to backend
+7. **Backend updates** payment status
+8. **User redirected** to frontend with order ID
+9. **Frontend checks** payment status
+10. **Show success/failure** message to user
+
+This backend service handles all the complex Paytm integration logic, allowing you to focus on your frontend user experience.
