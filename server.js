@@ -1,63 +1,23 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const axios = require('axios');
-const { v4: uuidv4 } = require('uuid');
 const PaytmChecksum = require('paytmchecksum');
 require('dotenv').config();
 
+// Import configurations and models
+const connectDB = require('./config/database');
+const PaytmConfig = require('./config/paytm');
+const Payment = require('./models/Payment');
+
 const app = express();
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://chinnasivakrishna2003:siva@cluster0.u7gjmpo.mongodb.net/payment?retryWrites=true&w=majority&appName=Cluster0', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-
-// Payment Schema
-const paymentSchema = new mongoose.Schema({
-  orderId: { type: String, required: true, unique: true },
-  transactionId: { type: String },
-  amount: { type: Number, required: true },
-  currency: { type: String, default: 'INR' },
-  customerEmail: { type: String, required: true },
-  customerPhone: { type: String, required: true },
-  customerName: { type: String, required: true },
-  status: { 
-    type: String, 
-    enum: ['PENDING', 'SUCCESS', 'FAILED', 'CANCELLED'],
-    default: 'PENDING' 
-  },
-  paytmResponse: { type: Object },
-  paytmTxnId: { type: String },
-  paytmOrderId: { type: String },
-  gatewayName: { type: String, default: 'PAYTM' },
-  paymentMode: { type: String },
-  bankName: { type: String },
-  bankTxnId: { type: String },
-  responseCode: { type: String },
-  responseMsg: { type: String },
-  checksumHash: { type: String },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-const Payment = mongoose.model('Payment', paymentSchema);
-
-// Paytm Configuration
-const PaytmConfig = {
-  MID: 'Mobish80382601607975',
-  WEBSITE: 'DEFAULT',
-  CHANNEL_ID: 'WEB',
-  INDUSTRY_TYPE_ID: 'Retail109',
-  MERCHANT_KEY: 'VrUA6E69o_R%a%te',
-  CALLBACK_URL: process.env.PAYTM_CALLBACK_URL || 'http://localhost:5000/api/paytm/callback',
-  PAYTM_URL: process.env.PAYTM_URL || 'https://securegw.paytm.in/order/process'
-};
+// Connect to MongoDB
+connectDB();
 
 // Routes
 
@@ -70,7 +30,7 @@ app.post('/api/paytm/initiate', async (req, res) => {
     if (!amount || !customerEmail || !customerPhone || !customerName) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields'
+        message: 'Missing required fields: amount, customerEmail, customerPhone, customerName'
       });
     }
 
@@ -130,9 +90,12 @@ app.post('/api/paytm/initiate', async (req, res) => {
 
     res.json({
       success: true,
-      orderId,
-      paytmParams,
-      paytmUrl: PaytmConfig.PAYTM_URL
+      message: 'Payment initiated successfully',
+      data: {
+        orderId,
+        paytmParams,
+        paytmUrl: PaytmConfig.PAYTM_URL
+      }
     });
 
   } catch (error) {
@@ -200,26 +163,13 @@ app.post('/api/paytm/callback', async (req, res) => {
 
     if (!payment) {
       console.error('Payment record not found for orderId:', orderId);
-      return res.status(404).send(`
-        <html>
-          <head>
-            <title>Payment Not Found</title>
-            <style>
-              body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-              .container { max-width: 600px; margin: 0 auto; }
-              .error { color: #d32f2f; }
-              .btn { background: #1976d2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1 class="error">Payment Record Not Found</h1>
-              <p>Order ID: ${orderId}</p>
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}" class="btn">Return to Home</a>
-            </div>
-          </body>
-        </html>
-      `);
+      return res.status(404).json({
+        success: false,
+        message: 'Payment record not found',
+        data: {
+          orderId
+        }
+      });
     }
 
     console.log('Payment updated successfully:', {
@@ -230,33 +180,33 @@ app.post('/api/paytm/callback', async (req, res) => {
       checksumValid: isValidChecksum
     });
 
-    // Redirect to frontend with order ID
-    const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}?orderId=${orderId}`;
-    res.redirect(redirectUrl);
+    // Return JSON response with payment details
+    res.json({
+      success: true,
+      message: 'Payment callback processed successfully',
+      data: {
+        orderId,
+        status: paymentStatus,
+        transactionId: updateData.transactionId,
+        amount: payment.amount,
+        customerEmail: payment.customerEmail,
+        customerName: payment.customerName,
+        paymentMode: paytmResponse.PAYMENTMODE,
+        bankName: paytmResponse.BANKNAME,
+        responseCode: paytmResponse.RESPCODE,
+        responseMsg: paytmResponse.RESPMSG,
+        checksumValid: isValidChecksum,
+        redirectUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}?orderId=${orderId}`
+      }
+    });
 
   } catch (error) {
     console.error('Payment callback error:', error);
-    res.status(500).send(`
-      <html>
-        <head>
-          <title>Payment Error</title>
-          <style>
-            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-            .container { max-width: 600px; margin: 0 auto; }
-            .error { color: #d32f2f; }
-            .btn { background: #1976d2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1 class="error">Payment Processing Error</h1>
-            <p>An error occurred while processing your payment.</p>
-            <p>Error: ${error.message}</p>
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}" class="btn">Return to Home</a>
-          </div>
-        </body>
-      </html>
-    `);
+    res.status(500).json({
+      success: false,
+      message: 'Payment processing error',
+      error: error.message
+    });
   }
 });
 
@@ -270,13 +220,17 @@ app.get('/api/paytm/status/:orderId', async (req, res) => {
     if (!payment) {
       return res.status(404).json({
         success: false,
-        message: 'Payment not found'
+        message: 'Payment not found',
+        data: {
+          orderId
+        }
       });
     }
 
     res.json({
       success: true,
-      payment: {
+      message: 'Payment status retrieved successfully',
+      data: {
         orderId: payment.orderId,
         amount: payment.amount,
         status: payment.status,
@@ -320,11 +274,16 @@ app.get('/api/paytm/payments', async (req, res) => {
 
     res.json({
       success: true,
-      payments,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(total / limit),
-        totalRecords: total
+      message: 'Payments retrieved successfully',
+      data: {
+        payments,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total / limit),
+          totalRecords: total,
+          hasNext: page < Math.ceil(total / limit),
+          hasPrev: page > 1
+        }
       }
     });
 
@@ -359,9 +318,7 @@ app.post('/api/paytm/transaction-status', async (req, res) => {
     const checksum = await PaytmChecksum.generateSignature(statusParams, PaytmConfig.MERCHANT_KEY);
     statusParams.CHECKSUMHASH = checksum;
 
-    const statusUrl = 'https://securegw-stage.paytm.in/order/status';
-    
-    const response = await axios.post(statusUrl, statusParams, {
+    const response = await axios.post(PaytmConfig.STATUS_URL, statusParams, {
       headers: {
         'Content-Type': 'application/json'
       }
@@ -371,6 +328,7 @@ app.post('/api/paytm/transaction-status', async (req, res) => {
 
     res.json({
       success: true,
+      message: 'Transaction status retrieved successfully',
       data: response.data
     });
 
@@ -389,23 +347,34 @@ app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     message: 'Paytm Payment Gateway Server is running',
-    timestamp: new Date().toISOString(),
-    config: {
-      MID: PaytmConfig.MID,
-      WEBSITE: PaytmConfig.WEBSITE,
-      ENVIRONMENT: process.env.NODE_ENV || 'development',
-      PAYTM_URL: PaytmConfig.PAYTM_URL
+    data: {
+      timestamp: new Date().toISOString(),
+      config: {
+        MID: PaytmConfig.MID,
+        WEBSITE: PaytmConfig.WEBSITE,
+        ENVIRONMENT: process.env.NODE_ENV || 'development',
+        PAYTM_URL: PaytmConfig.PAYTM_URL
+      }
     }
   });
 });
 
-// Database connection event handlers
-mongoose.connection.on('connected', () => {
-  console.log('✅ Connected to MongoDB Atlas');
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message
+  });
 });
 
-mongoose.connection.on('error', (err) => {
-  console.error('❌ MongoDB connection error:', err);
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
+  });
 });
 
 const PORT = process.env.PORT || 5000;
